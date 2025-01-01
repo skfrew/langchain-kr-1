@@ -93,8 +93,13 @@ with st.sidebar:
     )  # OpenAI 모델 선택 옵션
     apply_btn = st.button("데이터 분석 시작")  # 데이터 분석을 시작하는 버튼
 
+# 에이전트의 동작과정
+# 1. Action
+# 2. Observation
+# 4. Final Answer (이거 직전에 2번까지 만족되지 않으면 다시 1,2를 반복)
 
-# 콜백 함수
+
+# 콜백 함수 - Action, 도구를 호출 (이 함수 안에는 유저가 어떤 동작을 하는지에 대한 데이터 저장)
 def tool_callback(tool) -> None:
     """
     도구 실행 결과를 처리하는 콜백 함수입니다.
@@ -137,7 +142,7 @@ def tool_callback(tool) -> None:
                 )
                 return
 
-
+# observation함수 - 호출한 도구를 observation_callback에다가 넣어줌 (이 함수 안에는 에이전트가 어떤 동작을 하는지에 대한 데이터 저장)
 def observation_callback(observation) -> None:
     """
     관찰 결과를 처리하는 콜백 함수입니다.
@@ -176,7 +181,7 @@ def create_agent(dataframe, selected_model="gpt-4o"):
     Returns:
         Agent: 생성된 데이터프레임 에이전트
     """
-    return create_pandas_dataframe_agent(
+    return create_pandas_dataframe_agent( # 사실상 여기서 에이전트가 어떤 동작을 수행할 수 있을지에 대한 지침이 있음.
         ChatOpenAI(model=selected_model, temperature=0),
         dataframe,
         verbose=False,
@@ -230,19 +235,30 @@ def ask(query):
 
 # 메인 로직
 if clear_btn:
-    st.session_state["messa ges"] = []  # 대화 내용 초기화
+    st.session_state["messages"] = []  # 대화 내용 초기화
 
 if apply_btn and uploaded_file:
-    loaded_data = pd.read_csv(uploaded_file)  # CSV 파일 로드
-    st.session_state["df"] = loaded_data  # 데이터프레임 저장
-    st.session_state["python_tool"] = PythonAstREPLTool()  # Python 실행 도구 생성
-    st.session_state["python_tool"].locals[
-        "df"
-    ] = loaded_data  # 데이터프레임을 Python 실행 환경에 추가
-    st.session_state["agent"] = create_agent(
-        loaded_data, selected_model
-    )  # 에이전트 생성
-    st.success("설정이 완료되었습니다. 대화를 시작해 주세요!")
+    if isinstance(uploaded_file, list) and len(uploaded_file) > 0:
+        uploaded_file = uploaded_file[0]  # 여러 파일이 업로드된 경우 첫 번째 파일 선택
+    
+    try:
+        # 인코딩 자동 감지
+        import chardet
+        raw_data = uploaded_file.read()  # UploadedFile 객체에서 내용을 읽음
+        detected_encoding = chardet.detect(raw_data)['encoding']
+        
+        # CSV 파일 로드
+        import io
+        loaded_data = pd.read_csv(io.BytesIO(raw_data), encoding=detected_encoding)
+        
+        # 상태 업데이트
+        st.session_state["df"] = loaded_data
+        st.session_state["python_tool"] = PythonAstREPLTool()
+        st.session_state["python_tool"].locals["df"] = loaded_data
+        st.session_state["agent"] = create_agent(loaded_data, selected_model)
+        st.success(f"설정이 완료되었습니다. 감지된 인코딩: {detected_encoding}")
+    except Exception as e:
+        st.error(f"파일을 로드하는 중 오류가 발생했습니다: {e}")
 elif apply_btn:
     st.warning("파일을 업로드 해주세요.")
 
