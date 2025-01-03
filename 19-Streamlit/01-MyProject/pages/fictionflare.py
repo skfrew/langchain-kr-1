@@ -177,19 +177,19 @@ def create_agent(character):
         # JSON의 "template" 필드를 사용
         template = profile["template"]
         system_message_content = template.format(
-            identity=profile["identity"],
-            knowledge="\n".join([f"### {key}:\n{value}" for key, value in profile["knowledge"].items()]),
+            identity=profile["data"]["identity"],
+            data="\n".join([f"- {key}: {value}" for key, value in profile["data"]["knowledge"].items()]),
             examples="\n".join(
-                [f"질문: {example['question']}\n답변: {example['answer']}" for example in profile["examples"]]
+                [f"질문: {example['question']}\n답변: {example['answer']}" for example in profile["data"]["examples"]]
             )
         )
     else:
         # "template" 필드가 없는 경우 기본 포맷 사용
         system_message_content = (
-            f"당신은 {profile['identity']}입니다. 대답의 포맷은 메신저 앱이므로 실제 문자를 보낸다는 형식입니다. 대답은 한 문장으로만 구성됩니다.\n"
-            + "\n".join([f"### {key}:\n{value}" for key, value in profile["knowledge"].items()])
+            f"당신은 {profile['data']['identity']}입니다. 대답의 포맷은 메신저 앱이므로 실제 문자를 보낸다는 형식입니다. 대답은 한 문장으로만 구성됩니다.\n\n"
+            + "\n".join([f"- {key}: {value}" for key, value in profile["data"]["knowledge"].items()])
             + "\n\n### 예시:\n"
-            + "\n".join([f"질문: {example['question']}\n답변: {example['answer']}" for example in profile["examples"]])
+            + "\n".join([f"질문: {example['question']}\n답변: {example['answer']}" for example in profile["data"]["examples"]])
         )
 
     # 대화 기록 초기화
@@ -239,7 +239,8 @@ def check_and_add_character_based_on_keyword(user_query: str):
         condition = char_data["condition"]
         if eval(condition):  # 조건 평가
             if char_name not in character_profiles:
-                character_profiles[char_name] = char_data["data"]
+                # 캐릭터 데이터 추가
+                character_profiles[char_name] = {"data": char_data["data"]}
                 save_json(characters_filepath, character_profiles)  # 업데이트된 캐릭터 저장
 
 # 캐릭터 선택 기능
