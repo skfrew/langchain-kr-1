@@ -200,7 +200,7 @@ def create_agent(character):
 # 질문 처리 함수
 def ask(query):
     # 특정 단어에 대한 캐릭터 추가 체크
-    check_and_add_character_based_on_keyword(query)
+    new_character_name = check_and_add_character_based_on_keyword(query)
 
     if st.session_state["agent"]:
         st.session_state["prompt_count"] += 1  # 프롬프트 횟수 증가
@@ -217,6 +217,7 @@ def ask(query):
             try:
                 response = chat(conversation_history)
                 ai_answer = response.content
+                # print(conversation_history) #디버깅용
 
                 # 출력 전에 딜레이 추가
                 delay_time = len(ai_answer) * 0.1  # 텍스트 길이에 비례한 딜레이 (예: 글자당 0.1초)
@@ -231,9 +232,15 @@ def ask(query):
                 st.error(error_message)
                 add_message(MessageRole.ASSISTANT, [MessageType.TEXT, error_message])
 
+    # 새로운 캐릭터 추가 시 김진욱이 알림을 전송
+    if new_character_name:  # 캐릭터가 추가되었다면
+        notify_character_added_to_jinwook(new_character_name, character_profiles[new_character_name]["data"])
+
 # 새로운 캐릭터 추가 조건 (특정 단어 기반)
 def check_and_add_character_based_on_keyword(user_query: str):
     global character_profiles, add_characters
+
+    new_character_name = None  # 새로운 캐릭터 이름을 저장
 
     for char_name, char_data in add_characters.items():
         condition = char_data["condition"]
@@ -242,6 +249,45 @@ def check_and_add_character_based_on_keyword(user_query: str):
                 # 캐릭터 데이터 추가
                 character_profiles[char_name] = {"data": char_data["data"]}
                 save_json(characters_filepath, character_profiles)  # 업데이트된 캐릭터 저장
+                new_character_name = char_name  # 새로 추가된 캐릭터 이름 저장
+                
+                # 새로운 캐릭터 알림 메시지 추가
+                notify_character_added_to_jinwook(char_name, char_data["data"])
+    return new_character_name  # 새로 추가된 캐릭터 이름 반환
+
+# 새로운 인물 알림 저장
+def notify_character_added_to_jinwook(new_character_name, new_character_data):
+    # 알림 메시지 구성
+    message = (
+        f"새로운 관련 인물 정보를 입수했습니다: **{new_character_name}**\n\n"
+        f"{new_character_data['identity']}\n"
+        f"추가로 질문이 필요하다면 알려주세요."
+    )
+
+    # 알림 저장 공간 초기화
+    if "jinwook_notifications" not in st.session_state:
+        st.session_state["jinwook_notifications"] = []
+
+    # 알림 메시지 저장
+    st.session_state["jinwook_notifications"].append(message)
+
+# 김진욱(경찰대 32기) 클릭 시 알림 표시
+def show_jinwook_notifications():
+    if "jinwook_notifications" in st.session_state:
+        notifications = st.session_state["jinwook_notifications"]
+
+        if notifications:
+            for message in notifications:
+                st.chat_message("assistant").write(message)
+
+            # 알림 표시 후 삭제
+            st.session_state["jinwook_notifications"] = []
+
+# 김진욱(경찰대 32기) 선택 이벤트 처리
+def on_character_selected(character_name):
+    if character_name == "김진욱(경찰대 32기)":
+        show_jinwook_notifications()
+
 
 # 캐릭터 선택 기능
 with st.sidebar:
@@ -269,14 +315,23 @@ st.sidebar.markdown(
 )
 
 # 캐릭터 선택 시 JSON으로부터 캐릭터 불러오기
-if st.session_state["selected_character"] != selected_character:
+if st.session_state.get("selected_character") != selected_character:
     st.session_state["selected_character"] = selected_character
     st.session_state["agent"] = create_agent(selected_character)
-    display_initial_messages(selected_character)
+    
+    display_initial_messages(selected_character)  # 초기 대화 표시
+    
+    # 김진욱(경찰대 32기)이 선택된 경우만 알림 표시
+    if selected_character == "김진욱(경찰대 32기)":
+        show_jinwook_notifications()  # 김진욱의 알림 표시 함수 호출
 else:
-    print_messages()
+    print_messages()  # 기존 대화 기록 표시
+    # 김진욱(경찰대 32기)이 선택된 경우만 알림 표시
+    if selected_character == "김진욱(경찰대 32기)":
+        show_jinwook_notifications()  # 김진욱의 알림 표시 함수 호출
 
 # 사용자 입력 처리
 user_input = st.chat_input("궁금한 내용을 물어보세요!")
 if user_input:
     ask(user_input)
+
