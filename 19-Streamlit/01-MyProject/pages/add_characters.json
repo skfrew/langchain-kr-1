@@ -63,7 +63,7 @@
         }
     },
     "이태수": {
-        "condition": "\"담배\" in user_query and \"이태수\" not in character_profiles",
+        "condition": "(\"담배\" in user_query and \"이태수\" not in character_profiles) or ('최주연' in character_profiles and st.session_state['prompt_count'] > 10)",
         "data": {
             "identity": "이태수: 53세 남성, 사채업자, 강아지와 단 둘이 거주중",
             "knowledge": {
@@ -88,7 +88,7 @@
         }
     },
     "박해진": {
-        "condition": "\"장부\" in user_query and \"박해진\" not in character_profiles",
+        "condition": "(\"장부\" in user_query and \"박해진\" not in character_profiles) or ('이태수' in character_profiles and st.session_state['prompt_count'] > 8)",
         "data": {
             "identity": "박해진: 33세 여성, 김은정에게 3억 원 상당의 거액의 빚을 진 채무자, 도박 중독으로 정신이 온전치 않음",
             "knowledge": {

@@ -297,13 +297,16 @@ def check_and_add_character_based_on_keyword(user_query: str):
                 notify_character_added_to_jinwook(char_name, char_data["data"])
     return new_character_name  # 새로 추가된 캐릭터 이름 반환
 
+# 김진욱의 새로운 인물 노트
+
+
 # 새로운 인물 알림 저장
 def notify_character_added_to_jinwook(new_character_name, new_character_data):
     # 알림 메시지 구성
     message = (
-        f"새로운 관련 인물 정보를 입수했습니다: **{new_character_name}**\n\n"
+        f"새로운 인물 정보를 입수했습니다!"
         f"{new_character_data['identity']}\n"
-        f"추가로 질문이 필요하다면 알려주세요."
+        f"{new_character_name}씨와 이야기를 통해 새로운 정보를 수집할 필요가 있어 보입니다."
     )
 
     # 알림 저장 공간 초기화
