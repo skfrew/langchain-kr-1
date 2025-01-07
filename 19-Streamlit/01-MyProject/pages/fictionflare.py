@@ -23,6 +23,35 @@ if "agent" not in st.session_state:
     st.session_state["agent"] = None
 if "prompt_count" not in st.session_state:
     st.session_state["prompt_count"] = 0  # 프롬프트 횟수 초기화
+
+# 대화 기록 파일 경로 설정
+history_dir = os.path.join(os.path.dirname(__file__), "history")
+os.makedirs(history_dir, exist_ok=True)  # history 폴더 생성
+
+def get_history_filepath(character_name):
+    """캐릭터별 대화 기록 파일 경로 반환"""
+    return os.path.join(history_dir, f"{character_name}.json")
+
+def load_history(character_name):
+    """캐릭터별 대화 기록 로드"""
+    filepath = get_history_filepath(character_name)
+    if os.path.exists(filepath):
+        with open(filepath, "r", encoding="utf-8") as file:
+            return json.load(file)
+    return []
+
+def save_history(character_name, history):
+    """캐릭터별 대화 기록 저장"""
+    filepath = get_history_filepath(character_name)
+    with open(filepath, "w", encoding="utf-8") as file:
+        json.dump(history, file, ensure_ascii=False, indent=4)
+
+def clear_history(character_name):
+    """특정 캐릭터의 대화 기록 삭제"""
+    filepath = get_history_filepath(character_name)
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
 # 상수 정의
 class MessageRole:
     USER = "user"
@@ -95,6 +124,9 @@ def add_message(role: MessageRole, content: List[Union[MessageType, str]]):
         messages[-1][1].extend([content])
     else:
         messages.append([role, [content]])
+
+    # 대화 기록 파일에 저장
+    save_history(character, st.session_state["messages"][character])
 
 # 초기 메시지 출력 함수
 def display_initial_messages(character):
@@ -191,9 +223,19 @@ def create_agent(character):
             + "\n\n### 예시:\n"
             + "\n".join([f"질문: {example['question']}\n답변: {example['answer']}" for example in profile["data"]["examples"]])
         )
+        
+    # 대화 기록을 세션 상태에서 가져오기
+    conversation_history = [SystemMessage(content=system_message_content)]
+    if character in st.session_state["messages"]:
+        for role, content_list in st.session_state["messages"][character]:
+            for content in content_list:
+                if role == "user":
+                    conversation_history.append(HumanMessage(content=content[1]))
+                elif role == "assistant":
+                    conversation_history.append(AIMessage(content=content[1]))
 
     # 대화 기록 초기화
-    conversation_history = [SystemMessage(content=system_message_content)]
+    # conversation_history = [SystemMessage(content=system_message_content)]
 
     return chat, conversation_history
 
@@ -217,7 +259,7 @@ def ask(query):
             try:
                 response = chat(conversation_history)
                 ai_answer = response.content
-                # print(conversation_history) #디버깅용
+                print(conversation_history) #디버깅용
 
                 # 출력 전에 딜레이 추가
                 delay_time = len(ai_answer) * 0.1  # 텍스트 길이에 비례한 딜레이 (예: 글자당 0.1초)
@@ -273,15 +315,19 @@ def notify_character_added_to_jinwook(new_character_name, new_character_data):
 
 # 김진욱(경찰대 32기) 클릭 시 알림 표시
 def show_jinwook_notifications():
-    if "jinwook_notifications" in st.session_state:
+    if "jinwook_notifications" in st.session_state and st.session_state["jinwook_notifications"]:
+
         notifications = st.session_state["jinwook_notifications"]
+        combined_message = "\n\n".join(notifications)  # 모든 알림을 하나로 합침
 
-        if notifications:
-            for message in notifications:
-                st.chat_message("assistant").write(message)
+        # 한 번만 출력되도록 with 문 사용
+        with st.chat_message("assistant"):
+            if combined_message:
+                st.write(combined_message)
+                add_message(MessageRole.ASSISTANT, [MessageType.TEXT, combined_message])
 
-            # 알림 표시 후 삭제
-            st.session_state["jinwook_notifications"] = []
+        # 알림 표시 후 삭제
+        st.session_state["jinwook_notifications"] = []
 
 # 김진욱(경찰대 32기) 선택 이벤트 처리
 def on_character_selected(character_name):
@@ -322,16 +368,12 @@ if st.session_state.get("selected_character") != selected_character:
     display_initial_messages(selected_character)  # 초기 대화 표시
     
     # 김진욱(경찰대 32기)이 선택된 경우만 알림 표시
-    if selected_character == "김진욱(경찰대 32기)":
+    if selected_character == "김진욱(경찰대 32기)" and st.session_state.get("jinwook_notifications"):
         show_jinwook_notifications()  # 김진욱의 알림 표시 함수 호출
 else:
     print_messages()  # 기존 대화 기록 표시
-    # 김진욱(경찰대 32기)이 선택된 경우만 알림 표시
-    if selected_character == "김진욱(경찰대 32기)":
-        show_jinwook_notifications()  # 김진욱의 알림 표시 함수 호출
 
 # 사용자 입력 처리
 user_input = st.chat_input("궁금한 내용을 물어보세요!")
 if user_input:
     ask(user_input)
-
