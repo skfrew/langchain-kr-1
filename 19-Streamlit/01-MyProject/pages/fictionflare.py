@@ -158,31 +158,31 @@ def display_initial_messages(character):
         # 텍스트 메시지 출력
         for msg in initial_messages:
             with st.chat_message("assistant"):
-                time.sleep(len(msg) * 0.1)
+                time.sleep(len(msg) * 0) # 0.1
                 st.markdown(msg)
                 add_message(MessageRole.ASSISTANT, [MessageType.TEXT, msg])
         
         # 첫 번째 이미지(범죄 현장) 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(3)
+            time.sleep(0) # 3
             st.image(crime_scene_image)
             add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, crime_scene_image])
             
         # 마지막 설명 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(len(follow_up_message) * 0.1)
+            time.sleep(len(follow_up_message) * 0) # 0.1
             st.markdown(follow_up_message)
             add_message(MessageRole.ASSISTANT, [MessageType.TEXT, follow_up_message])
             
         # 두 번째 이미지(현정 프로필) 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(3)
+            time.sleep(0) # 3
             st.image(hyeonjeong_profile)
             add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, hyeonjeong_profile])
         
         # 마지막 설명 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(len(follow_up_message_2) * 0.1)
+            time.sleep(len(follow_up_message_2) * 0) # 0.1
             st.markdown(follow_up_message_2)
             add_message(MessageRole.ASSISTANT, [MessageType.TEXT, follow_up_message_2])
         
@@ -304,7 +304,7 @@ def check_and_add_character_based_on_keyword(user_query: str):
 def notify_character_added_to_jinwook(new_character_name, new_character_data):
     # 알림 메시지 구성
     message = (
-        f"새로운 인물 정보를 입수했습니다!"
+        f"새로운 인물 정보를 입수했습니다!\n"
         f"{new_character_data['identity']}\n"
         f"{new_character_name}씨와 이야기를 통해 새로운 정보를 수집할 필요가 있어 보입니다."
     )
@@ -313,21 +313,27 @@ def notify_character_added_to_jinwook(new_character_name, new_character_data):
     if "jinwook_notifications" not in st.session_state:
         st.session_state["jinwook_notifications"] = []
 
-    # 알림 메시지 저장
-    st.session_state["jinwook_notifications"].append(message)
+    # 중복 메시지 방지: 동일한 메시지가 있으면 추가하지 않음
+    if message not in st.session_state["jinwook_notifications"]:
+        st.session_state["jinwook_notifications"].append(message)
+        
+        # 팝업 알림 표시
+        st.toast(f"📢 새로운 인물이 추가되었습니다! 동료 형사 김진욱과의 대화를 통해 확인해보세요", icon="🔔")
 
 # 김진욱(경찰대 32기) 클릭 시 알림 표시
 def show_jinwook_notifications():
     if "jinwook_notifications" in st.session_state and st.session_state["jinwook_notifications"]:
 
         notifications = st.session_state["jinwook_notifications"]
+        print(notifications)
         combined_message = "\n\n".join(notifications)  # 모든 알림을 하나로 합침
 
         # 한 번만 출력되도록 with 문 사용
         with st.chat_message("assistant"):
             if combined_message:
-                st.write(combined_message)
+                st.markdown(combined_message)
                 add_message(MessageRole.ASSISTANT, [MessageType.TEXT, combined_message])
+
 
         # 알림 표시 후 삭제
         st.session_state["jinwook_notifications"] = []
@@ -337,8 +343,38 @@ def on_character_selected(character_name):
     if character_name == "김진욱(경찰대 32기)":
         show_jinwook_notifications()
 
+# 복어 독 발견 트리거
+if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_character") == "김진욱(경찰대 32기)" and not st.session_state.get("poison_triggered", False):
+    # 팝업 알림 표시
+    st.toast(f"📢 새로운 증거가 발견되었습니다! 동료 형사 김진욱을 통해 확인해보세요.", icon="🔔")
+    # 메시지 출력
+    end_message = "피해자의 몸에서 테트로도톡신(복어 독)이 발견되었습니다! \n독에 중독된 뒤 숨을 거두기 직전에 목이 졸린 것으로 보입니다. 사망 추정 시간은 저녁 8시로 확인되었습니다."
+    # st.markdown(end_message)
+    st.markdown(end_message)
+    add_message(MessageRole.ASSISTANT, [MessageType.TEXT, end_message])
 
-# 캐릭터 선택 기능
+    # 트리거 플래그 업데이트
+    st.session_state["poison_triggered"] = True
+    
+
+# 제출 팝업창 정의
+@st.dialog("수사보고서(Investigation Report)")
+def submit_dialog():
+    st.subheader("누가, 어떻게 범행을 저질렀는가")
+    
+    # 사용자 입력란
+    user_response = st.text_area("내용을 입력하세요", placeholder="여기에 내용을 입력하세요...")
+    st.write("나는 본 보고서를 양심에 따라 사실에 근거하여 성실히 작성하였음을 선언합니다.")
+
+    # 팝업 내 제출 버튼
+    if st.button("서명 및 제출", key="submit_modal_button"):
+        if user_response:
+            st.info("제출이 완료되어 사건을 종결하겠습니다! -- 엔딩 연결")
+            # 여기에서 제출 처리 로직을 추가하세요
+        else:
+            st.error("내용을 입력해주세요.")
+
+# 기존 캐릭터 선택 기능
 with st.sidebar:
     st.header("대화 상대 선택")
     selected_character = st.radio(
@@ -356,12 +392,17 @@ with st.sidebar:
         st.session_state["messages"] = {}
         
         st.sidebar.success("캐릭터 데이터와 대화 기록이 초기화되었습니다!")
-st.sidebar.markdown(
-    "캐릭터 초기화 버튼은 테스트의 리셋용으로, 실제 UI에는 필요없는 기능임."
-)
-st.sidebar.markdown(
-    "새로고침해도 캐릭터 세팅이 초기화가 안되어서 **초기화 버튼 누르고 새로고침** 하면 제일 처음 세팅으로 돌아감"
-)
+
+    st.sidebar.markdown(
+        "캐릭터 초기화 버튼은 테스트의 리셋용으로, 실제 UI에는 필요없는 기능임."
+    )
+    st.sidebar.markdown(
+        "새로고침해도 캐릭터 세팅이 초기화가 안되어서 **초기화 버튼 누르고 새로고침** 하면 제일 처음 세팅으로 돌아감"
+    )
+
+    # 제출 버튼 추가
+    if st.sidebar.button("수사보고서 작성", key="submit_sidebar_button"):
+        submit_dialog()  # 팝업 다이얼로그 호출
 
 # 캐릭터 선택 시 JSON으로부터 캐릭터 불러오기
 if st.session_state.get("selected_character") != selected_character:

@@ -1,6 +1,6 @@
 {
     "신혁수": {
-        "condition": "st.session_state['prompt_count'] > 3 and '신혁수' not in character_profiles",
+        "condition": "st.session_state['prompt_count'] > 5 and '신혁수' not in character_profiles",
         "data": {
             "identity": "신혁수: 42세 남성, 피해자가 술자리를 가졌던 횟집의 사장, 횟집근처 5분거리에 거주중",
             "knowledge": {
@@ -25,7 +25,7 @@
         }
     },
     "최주연": {
-        "condition": "st.session_state['prompt_count'] > 5 and '최주연' not in character_profiles",
+        "condition": "st.session_state['prompt_count'] > 10 and '최주연' not in character_profiles",
         "data": {
             "identity": "최주연: 46세 여성, 피해자의 절친, 아르바이트를 주로 함",
             "knowledge": {
@@ -63,7 +63,7 @@
         }
     },
     "이태수": {
-        "condition": "(\"담배\" in user_query and \"이태수\" not in character_profiles) or ('최주연' in character_profiles and st.session_state['prompt_count'] > 10)",
+        "condition": "(\"담배\" in user_query and \"이태수\" not in character_profiles) or ('최주연' in character_profiles and st.session_state['prompt_count'] > 18)",
         "data": {
             "identity": "이태수: 53세 남성, 사채업자, 강아지와 단 둘이 거주중",
             "knowledge": {
@@ -88,7 +88,7 @@
         }
     },
     "박해진": {
-        "condition": "(\"장부\" in user_query and \"박해진\" not in character_profiles) or ('이태수' in character_profiles and st.session_state['prompt_count'] > 8)",
+        "condition": "(\"장부\" in user_query and \"박해진\" not in character_profiles) or ('이태수' in character_profiles and st.session_state['prompt_count'] > 25)",
         "data": {
             "identity": "박해진: 33세 여성, 김은정에게 3억 원 상당의 거액의 빚을 진 채무자, 도박 중독으로 정신이 온전치 않음",
             "knowledge": {
