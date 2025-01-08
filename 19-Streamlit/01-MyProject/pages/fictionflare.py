@@ -360,12 +360,12 @@ if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_cha
 # 제출 팝업창 정의
 @st.dialog("수사보고서(Investigation Report)")
 def submit_dialog():
-    st.subheader("누가, 어떻게 범행을 저질렀는가")
+    st.subheader("사망원인 수사 및 사건처리 관련 보고")
     
     # 사용자 입력란
-    user_response = st.text_area("내용을 입력하세요", placeholder="여기에 내용을 입력하세요...")
-    st.write("나는 본 보고서를 양심에 따라 사실에 근거하여 성실히 작성하였음을 선언합니다.")
-
+    user_response = st.text_area("누가, 어떻게 범행을 저질렀는가", placeholder="여기에 내용을 입력하세요...")
+    st.markdown("<br><div style='text-align: center; font-weight: bold;'>나는 본 보고서를 양심에 따라 사실에 근거하여 성실히 작성하였음을 선언합니다.</div>", unsafe_allow_html=True)
+    
     # 팝업 내 제출 버튼
     if st.button("서명 및 제출", key="submit_modal_button"):
         if user_response:
