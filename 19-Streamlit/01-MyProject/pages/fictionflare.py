@@ -7,6 +7,7 @@ import os
 import time
 import json
 import shutil
+from PIL import Image
 
 # API 키 및 프로젝트 설정
 load_dotenv()
@@ -276,7 +277,7 @@ def ask(query):
 
     # 새로운 캐릭터 추가 시 김진욱이 알림을 전송
     if new_character_name:  # 캐릭터가 추가되었다면
-        notify_character_added_to_jinwook(new_character_name, character_profiles[new_character_name]["data"])
+        notify_character_added_to_jinwook(new_character_name)
 
 # 새로운 캐릭터 추가 조건 (특정 단어 기반)
 def check_and_add_character_based_on_keyword(user_query: str):
@@ -293,47 +294,74 @@ def check_and_add_character_based_on_keyword(user_query: str):
                 save_json(characters_filepath, character_profiles)  # 업데이트된 캐릭터 저장
                 new_character_name = char_name  # 새로 추가된 캐릭터 이름 저장
                 
-                # 새로운 캐릭터 알림 메시지 추가
-                notify_character_added_to_jinwook(char_name, char_data["data"])
+                # 새로운 캐릭터 알림 메시지 추가 (단일 인자만 전달)
+                notify_character_added_to_jinwook(char_name)
     return new_character_name  # 새로 추가된 캐릭터 이름 반환
 
-# 김진욱의 새로운 인물 노트
-
-
+# 김진욱의 새로운 인물 노트 불러오기 (jinwook_memo.json)
 # 새로운 인물 알림 저장
-def notify_character_added_to_jinwook(new_character_name, new_character_data):
-    # 알림 메시지 구성
-    message = (
-        f"새로운 인물 정보를 입수했습니다!\n"
-        f"{new_character_data['identity']}\n"
-        f"{new_character_name}씨와 이야기를 통해 새로운 정보를 수집할 필요가 있어 보입니다."
-    )
+def notify_character_added_to_jinwook(new_character_name):
+    # 현재 파일의 디렉토리 경로 가져오기
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # JSON 파일 불러오기
+    try:
+        with open(os.path.join(current_dir, "jinwook_memo.json"), "r", encoding="utf-8") as file:
+            character_data = json.load(file)
+    except FileNotFoundError:
+        st.error("jinwook_memo.json 파일을 찾을 수 없습니다.")
+        return
+    except json.JSONDecodeError:
+        st.error("jinwook_memo.json 파일이 올바른 JSON 형식이 아닙니다.")
+        return
+
+    # 특정 인물에 대한 정보 가져오기
+    character_info = character_data.get("characters", {}).get(new_character_name)
+    if not character_info:
+        st.warning(f"'{new_character_name}'에 대한 정보가 없습니다.")
+        return
+
+    # 메시지와 이미지 가져오기
+    message = character_info.get("message", "새로운 인물 정보가 없습니다.")
+    image_path_2 = character_info.get("image", None)
+    if image_path_2:
+        image_path = os.path.join(os.path.dirname(__file__), image_path_2)
+        # 이미지 파일 열기
+        image = Image.open(image_path)
 
     # 알림 저장 공간 초기화
     if "jinwook_notifications" not in st.session_state:
         st.session_state["jinwook_notifications"] = []
 
-    # 중복 메시지 방지: 동일한 메시지가 있으면 추가하지 않음
+    # 중복 메시지 방지
     if message not in st.session_state["jinwook_notifications"]:
         st.session_state["jinwook_notifications"].append(message)
-        
+        st.session_state["jinwook_notifications"].append(image)
+
         # 팝업 알림 표시
         st.toast(f"📢 새로운 인물이 추가되었습니다! 동료 형사 김진욱과의 대화를 통해 확인해보세요", icon="🔔")
 
 # 김진욱(경찰대 32기) 클릭 시 알림 표시
 def show_jinwook_notifications():
     if "jinwook_notifications" in st.session_state and st.session_state["jinwook_notifications"]:
-
         notifications = st.session_state["jinwook_notifications"]
-        print(notifications)
-        combined_message = "\n\n".join(notifications)  # 모든 알림을 하나로 합침
 
-        # 한 번만 출력되도록 with 문 사용
+        # 텍스트와 이미지를 분리해서 처리
+        text_notifications = [n for n in notifications if isinstance(n, str)]
+        image_notifications = [n for n in notifications if isinstance(n, Image.Image)]
+
+        # 텍스트 알림을 하나로 합침
+        combined_message = "\n\n".join(text_notifications)
+
         with st.chat_message("assistant"):
+            # 텍스트 알림 출력
             if combined_message:
                 st.markdown(combined_message)
                 add_message(MessageRole.ASSISTANT, [MessageType.TEXT, combined_message])
 
+            # 이미지 알림 출력
+            for img in image_notifications:
+                st.image(img)
 
         # 알림 표시 후 삭제
         st.session_state["jinwook_notifications"] = []
@@ -343,15 +371,18 @@ def on_character_selected(character_name):
     if character_name == "김진욱(경찰대 32기)":
         show_jinwook_notifications()
 
+medic_report = os.path.join(os.path.dirname(__file__), "../assets/medical_examination_report.png")
+#김진욱 새로운 고지 트리거
 # 복어 독 발견 트리거
-if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_character") == "김진욱(경찰대 32기)" and not st.session_state.get("poison_triggered", False):
+if st.session_state['prompt_count'] >= 3 and st.session_state.get("selected_character") == "김진욱(경찰대 32기)" and not st.session_state.get("poison_triggered", False):
     # 팝업 알림 표시
     st.toast(f"📢 새로운 증거가 발견되었습니다! 동료 형사 김진욱을 통해 확인해보세요.", icon="🔔")
     # 메시지 출력
     end_message = "피해자의 몸에서 테트로도톡신(복어 독)이 발견되었습니다! \n독에 중독된 뒤 숨을 거두기 직전에 목이 졸린 것으로 보입니다. 사망 추정 시간은 저녁 8시로 확인되었습니다."
     # st.markdown(end_message)
-    st.markdown(end_message)
+    # st.markdown(end_message)
     add_message(MessageRole.ASSISTANT, [MessageType.TEXT, end_message])
+    add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, medic_report])
 
     # 트리거 플래그 업데이트
     st.session_state["poison_triggered"] = True
