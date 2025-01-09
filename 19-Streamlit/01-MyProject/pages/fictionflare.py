@@ -374,7 +374,7 @@ def on_character_selected(character_name):
 medic_report = os.path.join(os.path.dirname(__file__), "../assets/medical_examination_report.png")
 #김진욱 새로운 고지 트리거
 # 복어 독 발견 트리거
-if st.session_state['prompt_count'] >= 3 and st.session_state.get("selected_character") == "김진욱(경찰대 32기)" and not st.session_state.get("poison_triggered", False):
+if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_character") == "김진욱(경찰대 32기)" and not st.session_state.get("poison_triggered", False):
     # 팝업 알림 표시
     st.toast(f"📢 새로운 증거가 발견되었습니다! 동료 형사 김진욱을 통해 확인해보세요.", icon="🔔")
     # 메시지 출력
