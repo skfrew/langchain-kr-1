@@ -200,7 +200,7 @@ def create_agent(character):
     
     # ChatOpenAI 에이전트 초기화
     chat = ChatOpenAI(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         temperature=0,
         openai_api_key=os.getenv("OPENAI_API_KEY"),
     )
