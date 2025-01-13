@@ -140,7 +140,7 @@ def display_initial_messages(character):
         initial_messages = [
             "안녕하세요. 저는 경찰대 32기 출신 김진욱입니다. 이번 사건 수사에서 함께하게 된 동료 형사입니다. 제가 사건의 기본 정보를 제공하고 수사를 원활히 진행할 수 있도록 도울 예정입니다.",
             "다만, 저는 수사 진행에 필요한 정보를 제공하는 역할을 맡고 있으니 저와의 직접적인 소통보다는 제공된 정보를 활용해 사건을 풀어나가 주시길 바랍니다.",
-            "앞으로 잘 부탁드립니다."
+            "앞으로 잘 부탁드립니다. "
             "그럼 바로 사건 내용을 간단히 브리핑하겠습니다.",
             "2023년 12월 20일, 수요일 오후 한 가정집에서 40대 여성 김은정 씨가 숨진 채 발견됐습니다. 시신을 처음 발견한 건 그녀의 동생 김현정 씨였고, 경찰에 직접 신고했습니다. 신고 당시 '언니가 방 안에서 죽어있다'고 말한 걸로 확인됐습니다.",
             "우선 사건 현장에서 찍은 사진을 전달해 드리겠습니다."
@@ -161,31 +161,31 @@ def display_initial_messages(character):
         # 텍스트 메시지 출력
         for msg in initial_messages:
             with st.chat_message("assistant"):
-                time.sleep(len(msg) * 0.1) # 0.1
+                time.sleep(len(msg) * 0) # 0.1
                 st.markdown(msg)
                 add_message(MessageRole.ASSISTANT, [MessageType.TEXT, msg])
         
         # 첫 번째 이미지(범죄 현장) 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(3) # 3
+            time.sleep(0) # 3
             st.image(crime_scene_image)
             add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, crime_scene_image])
             
         # 마지막 설명 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(len(follow_up_message) * 0.1) # 0.1
+            time.sleep(len(follow_up_message) * 0) # 0.1
             st.markdown(follow_up_message)
             add_message(MessageRole.ASSISTANT, [MessageType.TEXT, follow_up_message])
             
         # 두 번째 이미지(현정 프로필) 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(3) # 3
+            time.sleep(0) # 3
             st.image(hyeonjeong_profile)
             add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, hyeonjeong_profile])
         
         # 마지막 설명 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(len(follow_up_message_2) * 0.1) # 0.1
+            time.sleep(len(follow_up_message_2) * 0) # 0.1
             st.markdown(follow_up_message_2)
             add_message(MessageRole.ASSISTANT, [MessageType.TEXT, follow_up_message_2])
         
@@ -410,8 +410,45 @@ def submit_dialog():
     # 팝업 내 제출 버튼
     if st.button("서명 및 제출", key="submit_modal_button"):
         if user_response:
-            st.info("제출이 완료되어 사건을 종결하겠습니다! -- 엔딩 연결")
-            # 여기에서 제출 처리 로직을 추가하세요
+            # AI 평가 함수 정의
+            def evaluate_response(user_input, reference):
+                # 채팅 에이전트 초기화
+                chat = ChatOpenAI(
+                    model="gpt-4o-mini",  # 모델 선택
+                    temperature=0,
+                    openai_api_key=os.getenv("OPENAI_API_KEY"),
+                )
+                
+                # AI에게 주어질 프롬프트 작성
+                evaluation_prompt = (
+                    "당신은 평가를 수행하는 AI입니다. 사용자의 응답과 기준 응답(reference response)을 비교하여 100점 만점 기준으로 점수를 부여하세요. "
+                    "점수를 부여하는 이유를 한 줄로 간략하게 설명하세요. "
+                    "사용자 응답과 기준 응답은 다음과 같습니다:\n\n"
+                    f"사용자 응답:\n{user_input}\n\n"
+                    f"기준 응답:\n{reference}\n\n"
+                    "점수(0에서 100)와 점수 부여 이유를 다음 형식에 맞게 작성하세요:\n"
+                    "점수: [점수]\n이유: [점수를 부여한 이유]"
+                )
+                
+                # 시스템 메시지 구성
+                system_message = SystemMessage(content=evaluation_prompt)
+                
+                # AI 응답 가져오기
+                response = chat([system_message])
+                return response.content
+            
+            # Reference response 가져오기
+            reference_sentence = "범인은 최주연이다. 그녀는 김은정에게 전세사기와 관련한 도움을 요청했으나 거절당하자 깊은 분노를 품었다. 이후 김은정을 해칠 계획을 세웠고, 복어 독을 사용하여 범행을 저질렀다. 사건 당일 김은정을 자신의 집으로 초대해 범행을 실행했으며, 이후 자신의 흔적을 지우고 다른 이에게 죄를 덮어씌우기 위해 증거를 조작했다. 그녀는 자신의 행위를 정당화하려 했지만, 이는 명백한 범죄 행위였다."
+            
+            # AI 평가 호출
+            try:
+                ai_evaluation = evaluate_response(user_response, reference_sentence)
+                
+                # 결과 출력
+                st.success("AI 평가 결과:")
+                st.text(ai_evaluation)
+            except Exception as e:
+                st.error(f"AI 평가 중 오류가 발생했습니다: {e}")
         else:
             st.error("내용을 입력해주세요.")
 
