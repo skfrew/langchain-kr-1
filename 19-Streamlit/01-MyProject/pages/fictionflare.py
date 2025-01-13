@@ -159,31 +159,31 @@ def display_initial_messages(character):
         # 텍스트 메시지 출력
         for msg in initial_messages:
             with st.chat_message("assistant"):
-                time.sleep(len(msg) * 0) # 0.1
+                time.sleep(len(msg) * 0.1) # 0.1
                 st.markdown(msg)
                 add_message(MessageRole.ASSISTANT, [MessageType.TEXT, msg])
         
         # 첫 번째 이미지(범죄 현장) 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(0) # 3
+            time.sleep(3) # 3
             st.image(crime_scene_image)
             add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, crime_scene_image])
             
         # 마지막 설명 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(len(follow_up_message) * 0) # 0.1
+            time.sleep(len(follow_up_message) * 0.1) # 0.1
             st.markdown(follow_up_message)
             add_message(MessageRole.ASSISTANT, [MessageType.TEXT, follow_up_message])
             
         # 두 번째 이미지(현정 프로필) 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(0) # 3
+            time.sleep(3) # 3
             st.image(hyeonjeong_profile)
             add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, hyeonjeong_profile])
         
         # 마지막 설명 메시지 출력
         with st.chat_message("assistant"):
-            time.sleep(len(follow_up_message_2) * 0) # 0.1
+            time.sleep(len(follow_up_message_2) * 0.1) # 0.1
             st.markdown(follow_up_message_2)
             add_message(MessageRole.ASSISTANT, [MessageType.TEXT, follow_up_message_2])
         
@@ -234,9 +234,11 @@ def create_agent(character):
                     conversation_history.append(HumanMessage(content=content[1]))
                 elif role == "assistant":
                     conversation_history.append(AIMessage(content=content[1]))
+                    
 
     # 대화 기록 초기화
     # conversation_history = [SystemMessage(content=system_message_content)]
+    # print(conversation_history)
 
     return chat, conversation_history
 
@@ -260,7 +262,6 @@ def ask(query):
             try:
                 response = chat(conversation_history)
                 ai_answer = response.content
-                print(conversation_history) #디버깅용
 
                 # 출력 전에 딜레이 추가
                 delay_time = len(ai_answer) * 0.1  # 텍스트 길이에 비례한 딜레이 (예: 글자당 0.1초)
@@ -337,9 +338,12 @@ def notify_character_added_to_jinwook(new_character_name):
     if message not in st.session_state["jinwook_notifications"]:
         st.session_state["jinwook_notifications"].append(message)
         st.session_state["jinwook_notifications"].append(image)
+        
 
         # 팝업 알림 표시
         st.toast(f"📢 새로운 인물이 추가되었습니다! 동료 형사 김진욱과의 대화를 통해 확인해보세요", icon="🔔")
+
+loan_book = os.path.join(os.path.dirname(__file__), "../assets/loan_book.png")
 
 # 김진욱(경찰대 32기) 클릭 시 알림 표시
 def show_jinwook_notifications():
@@ -362,9 +366,13 @@ def show_jinwook_notifications():
             # 이미지 알림 출력
             for img in image_notifications:
                 st.image(img)
+                if "장부" in combined_message:
+                    add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, loan_book])
+                
 
         # 알림 표시 후 삭제
         st.session_state["jinwook_notifications"] = []
+
 
 # 김진욱(경찰대 32기) 선택 이벤트 처리
 def on_character_selected(character_name):

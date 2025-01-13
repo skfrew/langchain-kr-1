@@ -1,6 +1,9 @@
 {
     "신혁수": {
         "condition": "st.session_state['prompt_count'] > 5 and '신혁수' not in character_profiles",
+        "memo": {
+                "신혁수": "신혁수는 피해자의 마지막 행적이 확인된 횟집의 사장임. 이태수는 갱쥐헌을 앎."
+            },
         "data": {
             "identity": "신혁수: 42세 남성, 피해자가 술자리를 가졌던 횟집의 사장, 횟집근처 5분거리에 거주중",
             "knowledge": {
