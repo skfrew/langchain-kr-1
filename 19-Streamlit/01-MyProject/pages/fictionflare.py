@@ -1,6 +1,8 @@
 from typing import List, Union
 from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
+from langchain_teddynote import logging
 from dotenv import load_dotenv
 import streamlit as st
 import os
@@ -11,6 +13,9 @@ from PIL import Image
 
 # API 키 및 프로젝트 설정
 load_dotenv()
+
+# set_enable=False 로 지정하면 추적을 하지 않습니다.
+logging.langsmith("Fictionflare_Test", set_enable=True)
 
 # Streamlit 앱 설정
 st.title("등장인물과 대화하기 💬")
