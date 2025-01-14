@@ -15,7 +15,12 @@ from PIL import Image
 load_dotenv()
 
 # set_enable=False 로 지정하면 추적을 하지 않습니다.
-logging.langsmith("Fictionflare_Test", set_enable=True)
+logging.langsmith(
+    "Fictionflare_Test",
+    set_enable=True
+    # additional_kwargs = {"project_stage": "development"}
+    # response_metadata={"response_time": "100ms", "token_count": 10}
+)
 
 # Streamlit 앱 설정
 st.title("등장인물과 대화하기 💬")
@@ -29,6 +34,31 @@ if "agent" not in st.session_state:
     st.session_state["agent"] = None
 if "prompt_count" not in st.session_state:
     st.session_state["prompt_count"] = 0  # 프롬프트 횟수 초기화
+    
+
+# 가이드라인 팝업 다이얼로그
+@st.dialog("추리게임 픽션플레어(가칭)")
+def show_guide_dialog():
+    st.subheader("게임 플레이 가이드라인")
+    st.markdown("""
+    당신은 현재 범죄가 일어난 사건에서 피해자와 관련된 사람들과 대화를 나누며 유력한 용의자가 누군지, 어떤 범행을 저질렀는지 추리하는 형사입니다.
+    - **캐릭터 선택:** 왼쪽 사이드바에서 캐릭터를 선택하여 대화를 시작하세요. 어떤 질문을 하셔도 괜찮습니다. 질문을 하면서 증거를 모아보세요.
+    - **수사 보고서 작성:** 여러 인물과 대화를 통해 증거를 충분히 수집했고, 합당한 결론이 났다면 이 버튼을 통해 사건의 진상을 말씀해주세요.
+    - **팁:** 가이드를 다시 보고 싶다면 왼쪽 사이드바의 '가이드라인' 버튼을 눌러주세요.
+    
+    **[버그공지]**
+    현재 어플을 제작하기 전 기획적인 기능만 본따 만든 프로토타입이라 잔버그가 존재합니다. (실제 제품에서는 카카오톡을 하는 것과 같은 UI상에서 게임이 진행되니 참고 바랍니다.)
+    1. 인물에게 질문 이후 답장이 오기까지 잠시만(평균 2~3초) 기다려주세요. 답장이 오기 전 다른 인물로 대화창을 옮기면 답장을 못받는 현상이 있습니다.
+    2. 새로운 증거 알림이 표시될 경우 바로 질문을 이어가지 마시고, 왼쪽 사이드바의 서로 다른 캐릭터를 2번 정도 클릭(다른 캐릭터를 왔다갔다)해주세요. 동기화가 조금 느려 정보 업데이트가 덜 되는 현상때문에 양해부탁드리곘습니다.
+    
+    ※ **대화 초기화:** 이 버튼은 개발진이 테스트 용도로 만든 버튼이니, 무시하시면 됩니다. (사용 X)
+    """)
+    
+    if st.button("닫기", key="close_guide_button"):
+        st.rerun()
+
+# 가이드라인 표시: 앱 시작 시 실행
+# show_guide_dialog()
 
 # 대화 기록 파일 경로 설정
 history_dir = os.path.join(os.path.dirname(__file__), "history")
@@ -427,12 +457,14 @@ def submit_dialog():
                 # AI에게 주어질 프롬프트 작성
                 evaluation_prompt = (
                     "당신은 평가를 수행하는 AI입니다. 사용자의 응답과 기준 응답(reference response)을 비교하여 100점 만점 기준으로 점수를 부여하세요. "
-                    "점수를 부여하는 이유를 한 줄로 간략하게 설명하세요. "
+                    "100점 중 범인이 최주연인 사실을 밝히는 것을 50점의 비중으로 가중치를 주세요. 나머지 정보를 적절히 남은 50점에 분배해 주세요."
+                    "그러나 점수를 부여할 때 **범인의 이름이나 정답과 직접적으로 관련된 정보**를 언급하지 말고, 점수 부여 이유를 중립적이고 간략하게 작성하세요. "
+                    "특히, 진범이 누구인지, 범행 방식이나 결론을 직접적으로 유추할 수 있는 표현은 사용하지 마세요. "
                     "사용자 응답과 기준 응답은 다음과 같습니다:\n\n"
                     f"사용자 응답:\n{user_input}\n\n"
                     f"기준 응답:\n{reference}\n\n"
                     "점수(0에서 100)와 점수 부여 이유를 다음 형식에 맞게 작성하세요:\n"
-                    "점수: [점수]\n이유: [점수를 부여한 이유]"
+                    "점수: [점수]\n이유: [점수를 부여한 이유(중립적인 표현 사용)]"
                 )
                 
                 # 시스템 메시지 구성
@@ -443,14 +475,14 @@ def submit_dialog():
                 return response.content
             
             # Reference response 가져오기
-            reference_sentence = "범인은 최주연이다. 그녀는 김은정에게 전세사기와 관련한 도움을 요청했으나 거절당하자 깊은 분노를 품었다. 이후 김은정을 해칠 계획을 세웠고, 복어 독을 사용하여 범행을 저질렀다. 사건 당일 김은정을 자신의 집으로 초대해 범행을 실행했으며, 이후 자신의 흔적을 지우고 다른 이에게 죄를 덮어씌우기 위해 증거를 조작했다. 그녀는 자신의 행위를 정당화하려 했지만, 이는 명백한 범죄 행위였다."
+            reference_sentence = "범인은 최주연이다. 그녀는 김은정에게 전세사기와 관련한 도움을 요청했으나 거절당하자 깊은 분노를 품었다. 이후 김은정을 해칠 계획을 세웠고, 복어 독을 사용하여 범행을 저질렀다. 사건 당일 김은정의 집에서서 범행을 실행했으며, 이후 자신의 흔적을 지우고 다른 이에게 죄를 덮어씌우기 위해 증거를 조작했다."
             
             # AI 평가 호출
             try:
                 ai_evaluation = evaluate_response(user_response, reference_sentence)
                 
                 # 결과 출력
-                st.success("AI 평가 결과:")
+                st.success("AI 평가 결과(65점 이상 정답):")
                 st.text(ai_evaluation)
             except Exception as e:
                 st.error(f"AI 평가 중 오류가 발생했습니다: {e}")
@@ -464,9 +496,17 @@ with st.sidebar:
         "캐릭터를 선택하세요:",
         options=list(character_profiles.keys())
     )
+    
+    # 가이드라인 버튼 추가
+    if st.button("게임 가이드라인", key="show_guide_button"):
+        show_guide_dialog()  # 가이드라인 다이얼로그 호출
 
+    # 제출 버튼 추가
+    if st.sidebar.button("수사보고서 작성", key="submit_sidebar_button"):
+        submit_dialog()  # 팝업 다이얼로그 호출
+        
     # 캐릭터 초기화 버튼 추가
-    if st.sidebar.button("캐릭터 초기화"):
+    if st.sidebar.button("캐릭터 초기화(개발자용)"):
         shutil.copy(default_characters_filepath, characters_filepath)
         st.session_state["reset_characters"] = True  # 초기화 상태 업데이트
         character_profiles = load_json(characters_filepath)  # 캐릭터 데이터 다시 로드
@@ -475,17 +515,6 @@ with st.sidebar:
         st.session_state["messages"] = {}
         
         st.sidebar.success("캐릭터 데이터와 대화 기록이 초기화되었습니다!")
-
-    st.sidebar.markdown(
-        "캐릭터 초기화 버튼은 테스트의 리셋용으로, 실제 UI에는 필요없는 기능임."
-    )
-    st.sidebar.markdown(
-        "새로고침해도 캐릭터 세팅이 초기화가 안되어서 **초기화 버튼 누르고 새로고침** 하면 제일 처음 세팅으로 돌아감"
-    )
-
-    # 제출 버튼 추가
-    if st.sidebar.button("수사보고서 작성", key="submit_sidebar_button"):
-        submit_dialog()  # 팝업 다이얼로그 호출
 
 # 캐릭터 선택 시 JSON으로부터 캐릭터 불러오기
 if st.session_state.get("selected_character") != selected_character:
