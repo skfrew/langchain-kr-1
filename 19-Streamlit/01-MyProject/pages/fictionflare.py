@@ -332,7 +332,7 @@ def create_agent(character):
                 else:
                     raise ValueError(f"Invalid message format: {content}")
 
-    print(conversation_history)
+    # print(conversation_history)
     return chat, conversation_history
 
 # 질문 처리 함수
@@ -357,7 +357,7 @@ def ask(query):
                 ai_answer = response.content
 
                 # 출력 전에 딜레이 추가
-                delay_time = len(ai_answer) * 0.1  # 0.1, 텍스트 길이에 비례한 딜레이 (예: 글자당 0.1초)
+                delay_time = len(ai_answer) * 0  # 0.1, 텍스트 길이에 비례한 딜레이 (예: 글자당 0.1초)
                 time.sleep(delay_time)
 
                 # 전체 텍스트 출력
