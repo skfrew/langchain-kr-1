@@ -17,7 +17,7 @@ load_dotenv()
 # set_enable=False 로 지정하면 추적을 하지 않습니다.
 logging.langsmith(
     "Fictionflare_Test",
-    set_enable=True
+    set_enable=False
     # additional_kwargs = {"project_stage": "development"}
     # response_metadata={"response_time": "100ms", "token_count": 10}
 )
@@ -244,7 +244,6 @@ def create_agent(character):
 
     # 캐릭터 템플릿 구성
     if "template" in profile:
-        # JSON의 "template" 필드를 사용
         template = profile["template"]
         system_message_content = template.format(
             identity=profile["data"]["identity"],
@@ -254,28 +253,30 @@ def create_agent(character):
             )
         )
     else:
-        # "template" 필드가 없는 경우 기본 포맷 사용
         system_message_content = (
             f"당신은 {profile['data']['identity']}입니다. 대답의 포맷은 메신저 앱이므로 실제 문자를 보낸다는 형식입니다. 대답은 한 문장으로만 구성됩니다.\n\n"
             + "\n".join([f"- {key}: {value}" for key, value in profile["data"]["knowledge"].items()])
             + "\n\n### 예시:\n"
             + "\n".join([f"질문: {example['question']}\n답변: {example['answer']}" for example in profile["data"]["examples"]])
         )
-        
+    
     # 대화 기록을 세션 상태에서 가져오기
-    conversation_history = [SystemMessage(content=system_message_content)]
     if character in st.session_state["messages"]:
+        conversation_history = [SystemMessage(content=system_message_content)]
         for role, content_list in st.session_state["messages"][character]:
             for content in content_list:
-                if role == "user":
-                    conversation_history.append(HumanMessage(content=content[1]))
-                elif role == "assistant":
-                    conversation_history.append(AIMessage(content=content[1]))
-                    
-
-    # 대화 기록 초기화
-    # conversation_history = [SystemMessage(content=system_message_content)]
-    # print(conversation_history)
+                if isinstance(content, list) and len(content) == 2:  # ["TEXT", "내용"] 형태 처리
+                    _, text_content = content
+                    if role == "user":
+                        conversation_history.append(HumanMessage(content=text_content))
+                    elif role == "assistant":
+                        conversation_history.append(AIMessage(content=text_content))
+                else:
+                    raise ValueError(f"Invalid message format: {content}")
+    else:
+        conversation_history = [SystemMessage(content=system_message_content)]
+        
+    print(conversation_history)
 
     return chat, conversation_history
 
@@ -381,6 +382,11 @@ def notify_character_added_to_jinwook(new_character_name):
         st.toast(f"📢 새로운 인물이 추가되었습니다! 동료 형사 김진욱과의 대화를 통해 확인해보세요", icon="🔔")
 
 loan_book = os.path.join(os.path.dirname(__file__), "../assets/loan_book.png")
+hyeonjeong_profile = os.path.join(os.path.dirname(__file__), "../assets/hyeonjeong_profile.png")
+hyuksoo_profile = os.path.join(os.path.dirname(__file__), "../assets/hyuksoo_profile.png")
+jooyeon_profile = os.path.join(os.path.dirname(__file__), "../assets/jooyeon_profile.png")
+taesoo_profile = os.path.join(os.path.dirname(__file__), "../assets/taesoo_profile.png")
+haejin_profile = os.path.join(os.path.dirname(__file__), "../assets/haejin_profile.png")
 
 # 김진욱(경찰대 32기) 클릭 시 알림 표시
 def show_jinwook_notifications():
@@ -404,8 +410,15 @@ def show_jinwook_notifications():
             for img in image_notifications:
                 st.image(img)
                 if "장부" in combined_message:
+                    st.image(haejin_profile)
                     add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, loan_book])
-                
+                    add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, haejin_profile])
+                elif "최주연이라는" in combined_message:
+                    add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, jooyeon_profile])
+                elif "신혁수라는" in combined_message:
+                    add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, hyuksoo_profile])
+                elif "이태수라는" in combined_message:
+                    add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, taesoo_profile])
 
         # 알림 표시 후 삭제
         st.session_state["jinwook_notifications"] = []
@@ -424,8 +437,6 @@ if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_cha
     st.toast(f"📢 새로운 증거가 발견되었습니다! 동료 형사 김진욱을 통해 확인해보세요.", icon="🔔")
     # 메시지 출력
     end_message = "피해자의 몸에서 테트로도톡신(복어 독)이 발견되었습니다! \n독에 중독된 뒤 숨을 거두기 직전에 목이 졸린 것으로 보입니다. 사망 추정 시간은 저녁 8시로 확인되었습니다."
-    # st.markdown(end_message)
-    # st.markdown(end_message)
     add_message(MessageRole.ASSISTANT, [MessageType.TEXT, end_message])
     add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, medic_report])
 
