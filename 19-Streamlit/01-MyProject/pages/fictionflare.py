@@ -337,6 +337,14 @@ def create_agent(character):
 
 # 질문 처리 함수
 def ask(query):
+    # 최대 허용 자수
+    MAX_INPUT_LENGTH = 300  # 원하는 제한 글자 수 설정 (예: 300자)
+    
+    # 입력 길이 초과 시 경고 메시지와 입력 차단
+    if len(query) > MAX_INPUT_LENGTH:
+        st.warning(f"입력이 너무 깁니다! 메시지는 최대 {MAX_INPUT_LENGTH}자까지만 가능합니다. 현재 입력: {len(query)}자")
+        return  # 입력이 너무 길면 함수를 종료하여 처리하지 않음
+    
     # 특정 단어에 대한 캐릭터 추가 체크
     new_character_name = check_and_add_character_based_on_keyword(query)
 
