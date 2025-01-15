@@ -14,12 +14,44 @@ from PIL import Image
 # API 키 및 프로젝트 설정
 load_dotenv()
 
+#유저 넘버 부여
+def get_next_user_number():
+    # 사용자 번호를 저장할 파일 경로
+    user_file = "user_numbers.json"
+    
+    try:
+        # 파일이 존재하면 읽어오기
+        if os.path.exists(user_file):
+            with open(user_file, 'r') as f:
+                user_data = json.load(f)
+                last_number = user_data.get("last_number", 0)
+        else:
+            last_number = 0
+            
+        # 다음 번호 생성
+        next_number = last_number + 1
+        
+        # 새로운 번호 저장
+        with open(user_file, 'w') as f:
+            json.dump({"last_number": next_number}, f)
+            
+        return f"customer_{next_number}"
+        
+    except Exception as e:
+        print(f"Error managing user numbers: {e}")
+        return f"customer_unknown"
+
+# 사용자 ID 생성 로직 수정
+if "user_id" not in st.session_state:
+    st.session_state["user_id"] = get_next_user_number()
+user_id = st.session_state["user_id"]
+
 # set_enable=False 로 지정하면 추적을 하지 않습니다.
 logging.langsmith(
     "Fictionflare_Test",
-    set_enable=True
-    # additional_kwargs = {"project_stage": "development"}
-    # response_metadata={"response_time": "100ms", "token_count": 10}
+    set_enable=True,
+    # response_metadata={"user_id": user_id}  # 사용자 ID 추가
+    
 )
 
 # Streamlit 앱 설정
@@ -34,7 +66,7 @@ if "agent" not in st.session_state:
     st.session_state["agent"] = None
 if "prompt_count" not in st.session_state:
     st.session_state["prompt_count"] = 0  # 프롬프트 횟수 초기화
-    
+
 
 # 가이드라인 팝업 다이얼로그
 @st.dialog("추리게임 픽션플레어(가칭)")
@@ -240,6 +272,11 @@ def create_agent(character):
         model="gpt-4o-mini",
         temperature=0,
         openai_api_key=os.getenv("OPENAI_API_KEY"),
+        tags=[f"character_{character}"],
+        metadata={                        # 메타데이터 추가
+            "character": character,
+            "user_id": st.session_state["user_id"]
+        }
     )
 
     # 캐릭터 템플릿 구성
@@ -261,23 +298,41 @@ def create_agent(character):
         )
     
     # 대화 기록을 세션 상태에서 가져오기
+    conversation_history = []
+    
+    # SystemMessage 추가 시 명시적으로 추가 속성 지정
+    system_message = SystemMessage(
+        content=system_message_content,
+        additional_kwargs={},
+        response_metadata={"character": character}
+    )
+    conversation_history.append(system_message)
+
     if character in st.session_state["messages"]:
-        conversation_history = [SystemMessage(content=system_message_content)]
         for role, content_list in st.session_state["messages"][character]:
             for content in content_list:
-                if isinstance(content, list) and len(content) == 2:  # ["TEXT", "내용"] 형태 처리
+                if isinstance(content, list) and len(content) == 2:
                     _, text_content = content
                     if role == "user":
-                        conversation_history.append(HumanMessage(content=text_content))
+                        conversation_history.append(
+                            HumanMessage(
+                                content=text_content,
+                                additional_kwargs={"User_ID": user_id},
+                                response_metadata={"character": character}
+                            )
+                        )
                     elif role == "assistant":
-                        conversation_history.append(AIMessage(content=text_content))
+                        conversation_history.append(
+                            AIMessage(
+                                content=text_content,
+                                additional_kwargs={"User_ID": user_id},
+                                response_metadata={"character": character}
+                            )
+                        )
                 else:
                     raise ValueError(f"Invalid message format: {content}")
-    else:
-        conversation_history = [SystemMessage(content=system_message_content)]
-        
-    # print(conversation_history)
 
+    print(conversation_history)
     return chat, conversation_history
 
 # 질문 처리 함수
