@@ -66,6 +66,10 @@ if "agent" not in st.session_state:
     st.session_state["agent"] = None
 if "prompt_count" not in st.session_state:
     st.session_state["prompt_count"] = 0  # 프롬프트 횟수 초기화
+# 게임 진행률을 세션 상태로 관리
+if "game_process" not in st.session_state:
+    st.session_state.game_process = 0
+
 
 
 # 가이드라인 팝업 다이얼로그
@@ -482,7 +486,11 @@ def show_jinwook_notifications():
                     add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, hyuksoo_profile])
                 elif "이태수라는" in combined_message:
                     add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, taesoo_profile])
-
+        
+        # 게임 진행률 업데이트
+        st.session_state.game_process += 20
+        st.toast(f"🎮 게임 진행률이 {st.session_state.game_process}%가 되었습니다! ")
+        
         # 알림 표시 후 삭제
         st.session_state["jinwook_notifications"] = []
 
@@ -502,6 +510,9 @@ if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_cha
     end_message = "피해자의 몸에서 테트로도톡신(복어 독)이 발견되었습니다! \n독에 중독된 뒤 숨을 거두기 직전에 목이 졸린 것으로 보입니다. 사망 추정 시간은 저녁 8시로 확인되었습니다."
     add_message(MessageRole.ASSISTANT, [MessageType.TEXT, end_message])
     add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, medic_report])
+    
+    st.session_state.game_process += 15
+    st.toast(f"🎮 게임 진행률이 {st.session_state.game_process}%가 되었습니다! ")
 
     # 트리거 플래그 업데이트
     st.session_state["poison_triggered"] = True
