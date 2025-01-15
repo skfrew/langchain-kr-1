@@ -17,7 +17,7 @@ load_dotenv()
 # set_enable=False 로 지정하면 추적을 하지 않습니다.
 logging.langsmith(
     "Fictionflare_Test",
-    set_enable=False
+    set_enable=True
     # additional_kwargs = {"project_stage": "development"}
     # response_metadata={"response_time": "100ms", "token_count": 10}
 )
@@ -276,7 +276,7 @@ def create_agent(character):
     else:
         conversation_history = [SystemMessage(content=system_message_content)]
         
-    print(conversation_history)
+    # print(conversation_history)
 
     return chat, conversation_history
 
