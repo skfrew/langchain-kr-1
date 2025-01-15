@@ -307,7 +307,7 @@ def create_agent(character):
     # SystemMessage 추가 시 명시적으로 추가 속성 지정
     system_message = SystemMessage(
         content=system_message_content,
-        additional_kwargs={},
+        additional_kwargs={"User_ID": user_id},
         response_metadata={"character": character}
     )
     conversation_history.append(system_message)
