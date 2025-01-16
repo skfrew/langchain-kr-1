@@ -49,7 +49,7 @@ user_id = st.session_state["user_id"]
 # set_enable=False 로 지정하면 추적을 하지 않습니다.
 logging.langsmith(
     "Fictionflare_Test",
-    set_enable=True,
+    set_enable=1,
     # response_metadata={"user_id": user_id}  # 사용자 ID 추가
     
 )
@@ -500,10 +500,27 @@ def on_character_selected(character_name):
     if character_name == "김진욱(경찰대 32기)":
         show_jinwook_notifications()
 
+@st.dialog("이어서 진행하기")
+def show_selection_dialog():
+    st.subheader("인물에게 질문할 수 있는 횟수(질문권)가 초과되었습니다!")
+    st.markdown("아래 버튼 중 하나를 선택해주세요.")
+    
+    # 버튼 3개
+    if st.button("30초 광고보고 20회 질문권 충전", key="option_1"):
+        st.session_state["selected_option"] = "옵션 1"
+        st.rerun()
+    elif st.button("1000원 지불하고 100회 질문권 충전", key="option_2"):
+        st.session_state["selected_option"] = "옵션 2"
+        st.rerun()
+    elif st.button("1시간 기다리고 10회 질문권 얻기", key="option_3"):
+        st.session_state["selected_option"] = "옵션 3"
+        st.rerun()
+
 medic_report = os.path.join(os.path.dirname(__file__), "../assets/medical_examination_report.png")
+
 #김진욱 새로운 고지 트리거
 # 복어 독 발견 트리거
-if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_character") == "김진욱(경찰대 32기)" and not st.session_state.get("poison_triggered", False):
+if st.session_state['prompt_count'] >= 3 and st.session_state.get("selected_character") == "김진욱(경찰대 32기)" and not st.session_state.get("poison_triggered", False):
     # 팝업 알림 표시
     st.toast(f"📢 새로운 증거가 발견되었습니다! 동료 형사 김진욱을 통해 확인해보세요.", icon="🔔")
     # 메시지 출력
@@ -513,10 +530,12 @@ if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_cha
     
     st.session_state.game_process += 15
     # st.toast(f"🎮 게임 진행률이 {st.session_state.game_process}%가 되었습니다! ")
+    
+    # 이어서 진행하기 팝업
+    show_selection_dialog()
 
     # 트리거 플래그 업데이트
     st.session_state["poison_triggered"] = True
-    
 
 # 제출 팝업창 정의
 @st.dialog("수사보고서(Investigation Report)")
