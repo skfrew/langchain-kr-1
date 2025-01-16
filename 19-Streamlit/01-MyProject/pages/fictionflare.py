@@ -342,7 +342,7 @@ def create_agent(character):
 # 질문 처리 함수
 def ask(query):
     # 최대 허용 자수
-    MAX_INPUT_LENGTH = 300  # 원하는 제한 글자 수 설정 (예: 300자)
+    MAX_INPUT_LENGTH = 100  # 원하는 제한 글자 수 설정 (예: 300자)
     
     # 입력 길이 초과 시 경고 메시지와 입력 차단
     if len(query) > MAX_INPUT_LENGTH:
@@ -489,7 +489,7 @@ def show_jinwook_notifications():
         
         # 게임 진행률 업데이트
         st.session_state.game_process += 20
-        st.toast(f"🎮 게임 진행률이 {st.session_state.game_process}%가 되었습니다! ")
+        # st.toast(f"🎮 게임 진행률이 {st.session_state.game_process}%가 되었습니다! ")
         
         # 알림 표시 후 삭제
         st.session_state["jinwook_notifications"] = []
@@ -512,7 +512,7 @@ if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_cha
     add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, medic_report])
     
     st.session_state.game_process += 15
-    st.toast(f"🎮 게임 진행률이 {st.session_state.game_process}%가 되었습니다! ")
+    # st.toast(f"🎮 게임 진행률이 {st.session_state.game_process}%가 되었습니다! ")
 
     # 트리거 플래그 업데이트
     st.session_state["poison_triggered"] = True
