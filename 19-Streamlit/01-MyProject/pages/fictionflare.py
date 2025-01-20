@@ -49,7 +49,7 @@ user_id = st.session_state["user_id"]
 # set_enable=False 로 지정하면 추적을 하지 않습니다.
 logging.langsmith(
     "Fictionflare_Test",
-    set_enable=1,
+    set_enable=0,
     # response_metadata={"user_id": user_id}  # 사용자 ID 추가
     
 )
@@ -530,12 +530,15 @@ if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_cha
     
     st.session_state.game_process += 15
     # st.toast(f"🎮 게임 진행률이 {st.session_state.game_process}%가 되었습니다! ")
-    
-    # 이어서 진행하기 팝업
-    show_selection_dialog()
 
     # 트리거 플래그 업데이트
     st.session_state["poison_triggered"] = True
+
+if st.session_state['prompt_count'] == 36 and not st.session_state.get("keep_going", False):
+    show_selection_dialog()
+    
+    # 트리거 플래그 업데이트
+    st.session_state["keep_going"] = True
 
 # 제출 팝업창 정의
 @st.dialog("수사보고서(Investigation Report)")
