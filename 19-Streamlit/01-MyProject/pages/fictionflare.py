@@ -58,7 +58,7 @@ logging.langsmith(
 )
 
 # Streamlit 앱 설정
-st.title("등장인물과 대화하기 💬")
+st.title("대화를 통해 범인을 찾아라!")
 
 # 세션 상태 초기화
 if "messages" not in st.session_state:
