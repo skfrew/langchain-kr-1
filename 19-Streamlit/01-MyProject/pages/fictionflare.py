@@ -49,9 +49,7 @@ user_id = st.session_state["user_id"]
 # set_enable=False 로 지정하면 추적을 하지 않습니다.
 logging.langsmith(
     "Fictionflare_Test",
-    set_enable=1,
-    # response_metadata={"user_id": user_id}  # 사용자 ID 추가
-    
+    set_enable=1  
 )
 
 # Streamlit 앱 설정
@@ -69,32 +67,28 @@ if "prompt_count" not in st.session_state:
 # 게임 진행률을 세션 상태로 관리
 if "game_process" not in st.session_state:
     st.session_state.game_process = 0
+if "guideline" not in st.session_state:
+    st.session_state["guideline"] = True
 
-
-
-# 가이드라인 팝업 다이얼로그
-@st.dialog("추리게임 픽션플레어(가칭)")
+@st.dialog("추리게임 슬루스(Sleuth)")
 def show_guide_dialog():
     st.subheader("게임 플레이 가이드라인")
     st.markdown("""
     당신은 현재 범죄가 일어난 사건에서 피해자와 관련된 사람들과 대화를 나누며 유력한 용의자가 누군지, 어떤 범행을 저질렀는지 추리하는 형사입니다.
     - **캐릭터 선택:** 왼쪽 사이드바에서 캐릭터를 선택하여 대화를 시작하세요. 어떤 질문을 하셔도 괜찮습니다. 질문을 하면서 증거를 모아보세요.
     - **수사 보고서 작성:** 여러 인물과 대화를 통해 증거를 충분히 수집했고, 합당한 결론이 났다면 이 버튼을 통해 사건의 진상을 말씀해주세요.
-    - **팁:** 가이드를 다시 보고 싶다면 왼쪽 사이드바의 '가이드라인' 버튼을 눌러주세요.
-    
-    **[버그공지]**
-    현재 어플을 제작하기 전 기획적인 기능만 본따 만든 프로토타입이라 잔버그가 존재합니다. (실제 제품에서는 카카오톡을 하는 것과 같은 UI상에서 게임이 진행되니 참고 바랍니다.)
-    1. 인물에게 질문 이후 답장이 오기까지 잠시만(평균 2~3초) 기다려주세요. 답장이 오기 전 다른 인물로 대화창을 옮기면 답장을 못받는 현상이 있습니다.
-    2. 새로운 증거 알림이 표시될 경우 바로 질문을 이어가지 마시고, 왼쪽 사이드바의 서로 다른 캐릭터를 2번 정도 클릭(다른 캐릭터를 왔다갔다)해주세요. 동기화가 조금 느려 정보 업데이트가 덜 되는 현상때문에 양해부탁드리곘습니다.
-    
+    - **팁: 누군가는 실수로 거짓말을 할 수도 있고, 누군가는 일부러 거짓말을 할 수도 있습니다.**
+
     ※ **대화 초기화:** 이 버튼은 개발진이 테스트 용도로 만든 버튼이니, 무시하시면 됩니다. (사용 X)
     """)
     
     if st.button("닫기", key="close_guide_button"):
+        st.session_state["guideline"] = False
         st.rerun()
 
-# 가이드라인 표시: 앱 시작 시 실행
-# show_guide_dialog()
+# 가이드라인 표시
+if st.session_state["guideline"]:
+    show_guide_dialog()
 
 # 대화 기록 파일 경로 설정
 history_dir = os.path.join(os.path.dirname(__file__), "history")
