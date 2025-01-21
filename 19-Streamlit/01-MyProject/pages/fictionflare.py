@@ -16,7 +16,7 @@ load_dotenv()
 
 st.set_page_config(
     page_title="Sleuth",
-    page_icon="favicon.png",  # 로컬에 있는 이미지 파일 경로
+    page_icon="favicon.png"
 )
 
 #유저 넘버 부여
