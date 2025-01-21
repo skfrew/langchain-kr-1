@@ -14,6 +14,11 @@ from PIL import Image
 # API 키 및 프로젝트 설정
 load_dotenv()
 
+st.set_page_config(
+    page_title="Sleuth",
+    page_icon="favicon.png",  # 로컬에 있는 이미지 파일 경로
+)
+
 #유저 넘버 부여
 def get_next_user_number():
     # 사용자 번호를 저장할 파일 경로
