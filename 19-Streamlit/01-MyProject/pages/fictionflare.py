@@ -49,7 +49,7 @@ user_id = st.session_state["user_id"]
 # set_enable=False 로 지정하면 추적을 하지 않습니다.
 logging.langsmith(
     "Fictionflare_Test",
-    set_enable=0,
+    set_enable=1,
     # response_metadata={"user_id": user_id}  # 사용자 ID 추가
     
 )
