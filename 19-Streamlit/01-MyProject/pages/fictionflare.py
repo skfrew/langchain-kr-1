@@ -519,13 +519,15 @@ medic_report = os.path.join(os.path.dirname(__file__), "../assets/medical_examin
 
 #김진욱 새로운 고지 트리거
 # 복어 독 발견 트리거
-if st.session_state['prompt_count'] >= 35 and st.session_state.get("selected_character") == "김진욱(경찰대 32기)" and not st.session_state.get("poison_triggered", False):
+if st.session_state['prompt_count'] >= 4 and st.session_state.get("selected_character") == "김진욱(경찰대 32기)" and not st.session_state.get("poison_triggered", False):
     # 팝업 알림 표시
     st.toast(f"📢 새로운 증거가 발견되었습니다! 동료 형사 김진욱을 통해 확인해보세요.", icon="🔔")
     # 메시지 출력
     end_message = "피해자의 몸에서 테트로도톡신(복어 독)이 발견되었습니다! \n독에 중독된 뒤 숨을 거두기 직전에 목이 졸린 것으로 보입니다. 사망 추정 시간은 저녁 8시로 확인되었습니다."
+    process_message = "지금까지 확보된 증거와 관련된 인물은 모두 파악된 상태입니다. 추가로 새로운 증거나 인물이 나올 가능성은 없을 것으로 보입니다. 이제 이 자료들을 바탕으로 형사님께서 추측되는 범인과 범행에 대해 수사보고서에 작성해 주시길 부탁드립니다!"
     add_message(MessageRole.ASSISTANT, [MessageType.TEXT, end_message])
     add_message(MessageRole.ASSISTANT, [MessageType.IMAGE, medic_report])
+    add_message(MessageRole.ASSISTANT, [MessageType.TEXT, process_message])
     
     st.session_state.game_process += 15
     # st.toast(f"🎮 게임 진행률이 {st.session_state.game_process}%가 되었습니다! ")
