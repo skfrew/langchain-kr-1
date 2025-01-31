@@ -552,14 +552,18 @@ def submit_dialog():
     st.subheader("사망원인 수사 및 사건처리 관련 보고")
     
     # 사용자 입력란
-    user_response = st.text_area("누가, 어떻게 범행을 저질렀는가", placeholder="여기에 내용을 입력하세요...")
+    user_response = st.text_area("1. 범행 장소", placeholder="여기에 내용을 입력하세요...")
+    user_response_2 = st.text_area("2. 피의자", placeholder="여기에 내용을 입력하세요...")
+    user_response_3 = st.text_area("3. 도난 물품", placeholder="여기에 내용을 입력하세요...")
+    user_response_4 = st.text_area("4. 범행 동기", placeholder="여기에 내용을 입력하세요...")
+    user_response_5 = st.text_area("5. 독 획득 과정", placeholder="여기에 내용을 입력하세요...")
     st.markdown("<br><div style='text-align: center; font-weight: bold;'>나는 본 보고서를 양심에 따라 사실에 근거하여 성실히 작성하였음을 선언합니다.</div>", unsafe_allow_html=True)
     
     # 팝업 내 제출 버튼
     if st.button("서명 및 제출", key="submit_modal_button"):
-        if user_response:
+        if user_response and user_response_2 and user_response_3 and user_response_4 and user_response_5:
             # AI 평가 함수 정의
-            def evaluate_response(user_input, reference):
+            def evaluate_response(user_input_1, user_input_2, user_input_3, user_input_4, user_input_5):
                 # 채팅 에이전트 초기화
                 chat = ChatOpenAI(
                     model="gpt-4o-mini",  # 모델 선택
@@ -568,17 +572,34 @@ def submit_dialog():
                 )
                 
                 # AI에게 주어질 프롬프트 작성
-                evaluation_prompt = (
-                    "당신은 평가를 수행하는 AI입니다. 사용자의 응답과 기준 응답(reference response)을 비교하여 100점 만점 기준으로 점수를 부여하세요. "
-                    "100점 중 범인이 최주연인 사실을 밝히는 것을 50점의 비중으로 가중치를 주세요. 나머지 정보를 적절히 남은 50점에 분배해 주세요."
-                    "그러나 점수를 부여할 때 **범인의 이름이나 정답과 직접적으로 관련된 정보**를 언급하지 말고, 점수 부여 이유를 중립적이고 간략하게 작성하세요. "
-                    "특히, 진범이 누구인지, 범행 방식이나 결론을 직접적으로 유추할 수 있는 표현은 사용하지 마세요. "
-                    "사용자 응답과 기준 응답은 다음과 같습니다:\n\n"
-                    f"사용자 응답:\n{user_input}\n\n"
-                    f"기준 응답:\n{reference}\n\n"
-                    "점수(0에서 100)와 점수 부여 이유를 다음 형식에 맞게 작성하세요:\n"
-                    "점수: [점수]\n이유: [점수를 부여한 이유(중립적인 표현 사용)]"
-                )
+                evaluation_prompt = f"""
+                당신은 사용자의 답안을 1, 2, 3 중 하나의 숫자로만 평가하는 AI입니다. 
+                정답 기준과 사용자의 답안을 비교하여 채점 기준에 맞게 채점해주세요.
+
+                ### 채점 기준
+                1️⃣ (모두 틀린 경우) → "1"
+                2️⃣ (피의자는 맞췄지만, 다른 내용이 틀린 경우) → "2"
+                3️⃣ (모든 정답을 맞춘 경우) → "3"
+
+                ### 정답 기준
+                1. 범행 장소: "김은정(피해자)의 집"
+                2. 피의자: "최주연"
+                3. 도난 물품: "최주연의 차용증", "김은정의 휴대폰"
+                4. 범행 동기: "전세사기로 어려움을 겪던 최주연에게 김은정이 금전적인 도움을 주지 않음"
+                5. 독 획득 과정: "(복어요리가 있는)신혁수의 횟집에서 아르바이트를 하면서 복어 독을 빼돌림"
+
+                ### 사용자의 답안
+                1. 범행 장소: "{user_input_1}"
+                2. 피의자: "{user_input_2}"
+                3. 도난 물품: "{user_input_3}"
+                4. 범행 동기: "{user_input_4}"
+                5. 독 획득 과정: "{user_input_5}"
+
+                ### 출력 형식
+                - 반드시 "1", "2", "3" 중 하나만 출력하세요.
+                - 추가 설명 없이 정확한 숫자 하나만 반환하세요.
+                - 유사한 의미의 표현은 정답으로 인정하세요.
+                """
                 
                 # 시스템 메시지 구성
                 system_message = SystemMessage(content=evaluation_prompt)
@@ -586,16 +607,12 @@ def submit_dialog():
                 # AI 응답 가져오기
                 response = chat([system_message])
                 return response.content
-            
-            # Reference response 가져오기
-            reference_sentence = "범인은 최주연이다. 그녀는 김은정에게 전세사기와 관련한 도움을 요청했으나 거절당하자 깊은 분노를 품었다. 이후 김은정을 해칠 계획을 세웠고, 복어 독을 사용하여 범행을 저질렀다. 사건 당일 김은정의 집에서서 범행을 실행했으며, 이후 자신의 흔적을 지우고 다른 이에게 죄를 덮어씌우기 위해 증거를 조작했다."
-            
             # AI 평가 호출
             try:
-                ai_evaluation = evaluate_response(user_response, reference_sentence)
+                ai_evaluation = evaluate_response(user_response, user_response_2, user_response_3, user_response_4, user_response_5)
                 
                 # 결과 출력
-                st.success("AI 평가 결과(65점 이상 정답):")
+                st.success("AI 평가 결과:")
                 st.text(ai_evaluation)
             except Exception as e:
                 st.error(f"AI 평가 중 오류가 발생했습니다: {e}")
